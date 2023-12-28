@@ -10,9 +10,6 @@ import matplotlib.pyplot as plt
 x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
 
-
-print(x_train[0])
-
 # For normalization image pixel values are divided by 255
 gray_scale = 255
 x_train /= gray_scale

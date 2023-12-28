@@ -19,7 +19,7 @@ import evdev
 import pyudev
 import numpy as np
 
-from multilayer-perceptron import model
+from multilayer_perceptron import model
 
 DEFAULT_WIDTH = 600
 AA_FACTOR = 4  # Anti-aliasing
@@ -54,7 +54,7 @@ def lock_pointer_wayland():
         sp.call(['dconf', 'write', '/org/gnome/desktop/peripherals/touchpad/send-events', prev_value])
 
 
-def make_ui(events, image_size, devname, args):
+def make_ui(events, image_size, devname):
     top = tkinter.Tk()
 
     top.resizable(False, False)
@@ -142,12 +142,15 @@ def make_ui(events, image_size, devname, args):
         # image.show()
 
         l = list(image.getdata())
-        print(len(l))
+        test_data = np.array([1.0 * n for n in l])
+        test_data = test_data.reshape(28, 28)
 
 
 
-        # one_prediction = model.predict(np.array([x_test[0]]))
 
+        one_prediction = model.predict(np.array([test_data]))
+
+        print(one_prediction)
 
 
         exit(0)
@@ -231,10 +234,7 @@ def get_touchpad(udev):
     return None, None
 
 
-def main(args):
-
-    print(args)
-
+def main():
     udev = pyudev.Context()
     touchpad, devname = get_touchpad(udev)
     if touchpad is None:
@@ -278,119 +278,11 @@ def main(args):
                 yield []
 
     scaled = (DEFAULT_WIDTH, int(DEFAULT_WIDTH / val_range[0] * val_range[1]))
-    make_ui(handler_loop(), scaled, devname, args)
+    make_ui(handler_loop(), scaled, devname)
     del touchpad
 
 
-def cli():
-    parser = argparse.ArgumentParser(description='Gets a finger painting from the user using the touchpad, useful for '
-                                                 'document signatures or complex character input, etc.')
-    parser.add_argument(
-        '--width', type=int,
-        help=f'Width of the paint area (height is determined automatically) (default: {DEFAULT_WIDTH})'
-    )
-    parser.add_argument(
-        '--height', type=int,
-        help='Height of the paint area (width is determined automatically)'
-    )
-    parser.add_argument(
-        '--fullscreen', action='store_true',
-        help='Make the canvas fullscreen'
-    )
-    parser.add_argument(
-        '--title', type=str, default='FingerPaint',
-        help='Title of the window'
-    )
-    parser.add_argument(
-        "--dark", action='store_true',
-        help='Changes `background`, `hint-color`, and `line-color` to a dark theme')
-    parser.add_argument(
-        '--background', type=str, default='#eeeeee',
-        help='Background color (default: light gray)'
-    )
-    parser.add_argument(
-        '--hint', type=str, default='Press any key or click to finish drawing',
-        help='Hint to display to user'
-    )
-    parser.add_argument(
-        '--hint-size', type=int, default=16,
-        help='Font size of the hint text (default: 16)'
-    )
-    parser.add_argument(
-        '--hint-font', type=str, default='Ubuntu',
-        help='Font family of the hint text (default: Ubuntu)'
-    )
-    parser.add_argument(
-        '--hint-font-weight', type=str, default='bold',
-        help='Font family weight of the hint text (default: bold)'
-    )
-    parser.add_argument(
-        '--hint-color', type=str, default='#aaaaaa',
-        help='Font color of the hint text (default: dark gray)'
-    )
-    parser.add_argument(
-        '--line-color', type=str, default='#000000',
-        help='Line color (default: black)'
-    )
-    parser.add_argument(
-        '--line-thickness', type=int, default=6,
-        help='Line thickness (default: 6)'
-    )
-    parser.add_argument(
-        '-o', '--output', type=str, required=True,
-        help='Output file path'
-    )
-    args = parser.parse_args()
 
-    if args.dark:
-        args.background = '#222222'
-        args.line_color = '#cccccc'
-        args.hint_color = '#555555'
-
-    if args.width is not None and args.height is not None:
-        print('Specify EITHER --width or --height, the other will be determined by touchpad size', file=sys.stderr)
-        exit(1)
-
-    if args.width is None and args.height is None:
-        args.width = DEFAULT_WIDTH
-
-
-    if 'XDG_SESSION_TYPE' not in os.environ:
-        print('You don\'t seem to be running in a graphical environment ("XDG_SESSION_TYPE" is not set)')
-        exit(1)
-
-    if os.environ['XDG_SESSION_TYPE'] == 'wayland':
-        try:
-            sp.check_output(['dconf', 'help'])
-        except sp.CalledProcessError:
-            print('`dconf` fails to run, it\'s required in Wayland based desktop environments', file=sys.stderr)
-            exit(1)
-        except FileNotFoundError:
-            print('`dconf` binary not installed, install it with your package manager (Called `dconf-cli` on Ubuntu, or `dconf` on Arch)', file=sys.stderr)
-            print('It\'s required for Wayland based desktop environments.', file=sys.stderr)
-            exit(1)
-    else:
-        try:
-            sp.check_output(['xinput', '--version'])
-        except sp.CalledProcessError:
-            print('`xinput` fails to run, it\'s required in X11 based desktop environments', file=sys.stderr)
-            exit(1)
-        except FileNotFoundError:
-            print('`xinput` binary not installed, install it with your package manager (Called `xinput` on Ubuntu, or `xorg-xinput` on Arch)', file=sys.stderr)
-            print('It\'s required for X11 based desktop environments.', file=sys.stderr)
-            exit(1)
-
-    pillow_version = PIL.__version__.split('.')
-    pillow_version = int(pillow_version[0]), int(pillow_version[1])
-    if pillow_version[0] < 5 or (pillow_version[0] == 5 and pillow_version[1] < 3):
-        print('Pillow version 5.3.0 or higher is required', file=sys.stderr)
-        print('Please run:  python3 -m pip install -U Pillow', file=sys.stderr)
-        exit(1)
-
-    main(args)
-
-
-
-main(dict())
+main()
 
 
